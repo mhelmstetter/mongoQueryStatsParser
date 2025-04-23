@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query Command Details</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Add JSONTree for pretty printing and folding JSON -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery.json-viewer@1.4.0/json-viewer/jquery.json-viewer.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery.json-viewer@1.4.0/json-viewer/jquery.json-viewer.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .back-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+        .json-container {
+            background-color: #f8f8f8;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            overflow: auto;
+        }
+        .hash-display {
+            font-family: monospace;
+            background: #eee;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin-left: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="navigationLinks">
+            <!-- Navigation links will be added dynamically -->
+        </div>
+        
+        <h1>Query Details <span class="hash-display" id="hashDisplay">Loading...</span></h1>
+        
+        <h3>Command Type:</h3>
+        <div id="commandType">Loading...</div>
+        
+        <h3>Pipeline:</h3>
+        <div class="json-container">
+            <pre id="pipelineJson"></pre>
+        </div>
+        
+        <h3>Complete Query Shape:</h3>
+        <div class="json-container">
+            <pre id="fullQueryJson"></pre>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            const hashVal = "{{ hash_val }}";
+            let shapeId = null;
+            
+            // Get the parent shape ID to build navigation
+            $.getJSON('/api/data', function(summaryData) {
+                $.getJSON('/api/query_details/' + hashVal, function(queryData) {
+                    // Display hash
+                    $('#hashDisplay').text(hashVal);
+                    
+                    // Display command type
+                    $('#commandType').text(queryData.command);
+                    
+                    // Display pipeline JSON with folding
+                    $('#pipelineJson').jsonViewer(queryData.pipeline, {collapsed: false, rootCollapsable: false});
+                    
+                    // Display full query shape JSON with folding
+                    $('#fullQueryJson').jsonViewer(queryData.fullQueryShape, {collapsed: true});
+                    
+                    // Find which shape this query belongs to
+                    for (const entry of summaryData) {
+                        $.getJSON('/api/shape/' + entry.id, function(shapeData) {
+                            if (shapeData.details.some(item => item.hash === hashVal)) {
+                                // Build navigation links
+                                $('#navigationLinks').html(
+                                    '<a href="/" class="back-link">← Back to Summary</a> | ' +
+                                    '<a href="/shape/' + entry.id + '" class="back-link">← Back to ' + entry.shapeId + '</a>'
+                                );
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+        

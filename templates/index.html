@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Query Metrics Analyzer</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table.dataTable tbody tr:hover {
+            background-color: #f0f8ff;
+            cursor: pointer;
+        }
+        .highlight {
+            background-color: #e6f7ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MongoDB Query Metrics Analyzer</h1>
+        <p>Click on a row to view detailed information about that query shape.</p>
+        
+        <table id="metricsTable" class="display">
+            <thead>
+                <tr>
+                    <th>Shape ID</th>
+                    <th>Shapes Count</th>
+                    <th>Exec Count (total)</th>
+                    <th>Avg Exec (ms)</th>
+                    <th>Avg Total Exec (ms)</th>
+                    <th>Docs Returned (total)</th>
+                    <th>Docs Returned (avg)</th>
+                    <th>Keys Examined (total)</th>
+                    <th>Keys Examined (avg)</th>
+                    <th>Docs Examined (total)</th>
+                    <th>Docs Examined (avg)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Load data from API
+            $.getJSON('/api/data', function(data) {
+                // Initialize DataTable
+                const table = $('#metricsTable').DataTable({
+                    data: data,
+                    columns: [
+                        { data: 'shapeId' },
+                        { data: 'shapesCount' },
+                        { data: 'execCountTotal' },
+                        { data: 'avgExecMillis' },
+                        { data: 'avgTotalExecMillis' },
+                        { data: 'docsReturnedTotal' },
+                        { data: 'docsReturnedAvg' },
+                        { data: 'keysExaminedTotal' },
+                        { data: 'keysExaminedAvg' },
+                        { data: 'docsExaminedTotal' },
+                        { data: 'docsExaminedAvg' }
+                    ],
+                    order: [[2, 'desc']], // Sort by Exec Count (total) by default
+                    pageLength: 25, // Set default page length to 25
+                    lengthMenu: [10, 25, 50, 100], // Available page length options
+                    columnDefs: [
+                        {
+                            targets: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                            className: 'dt-right'
+                        }
+                    ]
+                });
+                
+                // Add click event to rows
+                $('#metricsTable tbody').on('click', 'tr', function() {
+                    const data = table.row(this).data();
+                    window.location.href = '/shape/' + data.id;
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+        

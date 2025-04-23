@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query Shape Details</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .field-names {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .back-link {
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table.dataTable tbody tr:hover {
+            background-color: #f0f8ff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Summary</a>
+        <h1 id="shapeTitle">Loading...</h1>
+        
+        <h2>Field Names:</h2>
+        <div class="field-names" id="fieldNames">Loading...</div>
+        
+        <h2>Query Details:</h2>
+        <table id="detailsTable" class="display">
+            <thead>
+                <tr>
+                    <th>Hash</th>
+                    <th>Exec Count</th>
+                    <th>Avg Exec (ms)</th>
+                    <th>Total Exec (ms)</th>
+                    <th>Docs Returned</th>
+                    <th>Keys Examined</th>
+                    <th>Docs Examined</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            const shapeId = {{ shape_id }};
+            
+            // Load shape details
+            $.getJSON('/api/shape/' + shapeId, function(data) {
+                // Update page title and field names
+                $('#shapeTitle').text(data.shapeId);
+                $('#fieldNames').text(data.fieldNames.join(', '));
+                
+                // Initialize DataTable
+                const table = $('#detailsTable').DataTable({
+                    data: data.details,
+                    columns: [
+                        { 
+                            data: 'hashDisplay',
+                            render: function(data, type, row) {
+                                if(type === 'display') {
+                                    return '<a href="/query/' + row.hash + '">' + data + '</a>';
+                                }
+                                return data;
+                            }
+                        },
+                        { data: 'execCount' },
+                        { data: 'avgExecMs' },
+                        { data: 'totalExecMs' },
+                        { data: 'docsReturned' },
+                        { data: 'keysExamined' },
+                        { data: 'docsExamined' }
+                    ],
+                    order: [[1, 'desc']], // Sort by Exec Count by default
+                    pageLength: 25, // Set default page length to 25
+                    lengthMenu: [10, 25, 50, 100], // Available page length options
+                    columnDefs: [
+                        {
+                            targets: [1, 2, 3, 4, 5, 6],
+                            className: 'dt-right'
+                        }
+                    ]
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+        
