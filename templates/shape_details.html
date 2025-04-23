@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,6 +31,13 @@
             font-family: monospace;
             white-space: pre-wrap;
         }
+        .namespace-display {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
         .back-link {
             margin-bottom: 20px;
             display: inline-block;
@@ -51,6 +57,9 @@
         <a href="/" class="back-link">← Back to Summary</a>
         <h1 id="shapeTitle">Loading...</h1>
         
+        <h2>Namespace:</h2>
+        <div class="namespace-display" id="namespaceDisplay">Loading...</div>
+        
         <h2>Field Names:</h2>
         <div class="field-names" id="fieldNames">Loading...</div>
         
@@ -59,6 +68,7 @@
             <thead>
                 <tr>
                     <th>Hash</th>
+                    <th>Namespace</th>
                     <th>Exec Count</th>
                     <th>Avg Exec (ms)</th>
                     <th>Total Exec (ms)</th>
@@ -79,8 +89,9 @@
             
             // Load shape details
             $.getJSON('/api/shape/' + shapeId, function(data) {
-                // Update page title and field names
+                // Update page title, namespace, and field names
                 $('#shapeTitle').text(data.shapeId);
+                $('#namespaceDisplay').text(data.namespace || 'N/A');
                 $('#fieldNames').text(data.fieldNames.join(', '));
                 
                 // Initialize DataTable
@@ -96,6 +107,7 @@
                                 return data;
                             }
                         },
+                        { data: 'namespace' },
                         { data: 'execCount' },
                         { data: 'avgExecMs' },
                         { data: 'totalExecMs' },
@@ -103,12 +115,12 @@
                         { data: 'keysExamined' },
                         { data: 'docsExamined' }
                     ],
-                    order: [[1, 'desc']], // Sort by Exec Count by default
+                    order: [[2, 'desc']], // Sort by Exec Count by default
                     pageLength: 25, // Set default page length to 25
                     lengthMenu: [10, 25, 50, 100], // Available page length options
                     columnDefs: [
                         {
-                            targets: [1, 2, 3, 4, 5, 6],
+                            targets: [2, 3, 4, 5, 6, 7],
                             className: 'dt-right'
                         }
                     ]
@@ -118,4 +130,3 @@
     </script>
 </body>
 </html>
-        

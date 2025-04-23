@@ -5,10 +5,11 @@ import statistics
 from collections import defaultdict
 from typing import Dict, List, Any, DefaultDict, Tuple
 
-def extract_match_shape_and_hash(batch: Dict) -> Tuple[str, tuple]:
-    """Extract the shape of the $match query"""
+def extract_match_shape_and_hash(batch: Dict) -> Tuple[str, tuple, str]:
+    """Extract the shape of the $match query and namespace"""
     pipeline = batch.get("key", {}).get("queryShape", {}).get("pipeline", [])
     original_hash = batch.get("queryShapeHash", "")
+    namespace = batch.get("key", {}).get("queryShape", {}).get("cmdNs", "")
     
     field_names = []
     for stage in pipeline:
@@ -19,7 +20,8 @@ def extract_match_shape_and_hash(batch: Dict) -> Tuple[str, tuple]:
             field_names.sort()
             break
     
-    return original_hash, tuple(field_names)  # Use tuple for hashability
+    return original_hash, tuple(field_names), namespace  # Use tuple for hashability
+
 
 def get_field_names(obj: Dict, prefix="") -> List[str]:
     """Recursively get all field names in a dictionary"""
@@ -52,20 +54,23 @@ def analyze_metrics(data: Dict) -> tuple:
     # Group hashes by field names (shape)
     shape_to_hashes = defaultdict(list)
     hash_to_metrics = defaultdict(list)
+    hash_to_namespace = {}  # Store namespace for each hash
     original_data = {}  # Store original data for drill-down
     
     for batch in data.get("cursor", {}).get("firstBatch", []):
-        query_shape_hash, field_names = extract_match_shape_and_hash(batch)
+        query_shape_hash, field_names, namespace = extract_match_shape_and_hash(batch)
         
         if query_shape_hash and "metrics" in batch:
             shape_to_hashes[field_names].append(query_shape_hash)
             hash_to_metrics[query_shape_hash].append(batch["metrics"])
+            hash_to_namespace[query_shape_hash] = namespace
             
             # Store original data for drill-down
             if query_shape_hash not in original_data:
                 original_data[query_shape_hash] = {
                     "query_shape": batch.get("key", {}).get("queryShape", {}),
-                    "metrics": []
+                    "metrics": [],
+                    "namespace": namespace
                 }
             original_data[query_shape_hash]["metrics"].append(batch["metrics"])
     
@@ -163,4 +168,3 @@ def analyze_metrics(data: Dict) -> tuple:
         results[shape_id] = shape_results
     
     return results, shapes
-
