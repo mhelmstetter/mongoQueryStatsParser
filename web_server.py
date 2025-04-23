@@ -22,8 +22,24 @@ def create_web_server(analyzed_results, shape_references):
             # Get namespace from the first hash in this shape
             shape_info = shape_references[shape_id]
             first_hash = shape_info["hashes"][0] if shape_info["hashes"] else ""
-            namespace = shape_info["original_data"][first_hash].get("namespace", "") if first_hash else ""
+            # Format namespace as 'db.coll'
+            namespace = ""
+            skip_this_shape = False
+            if first_hash:
+                ns_value = shape_info["original_data"][first_hash].get("namespace", "")
+                if isinstance(ns_value, dict) and 'db' in ns_value and 'coll' in ns_value:
+                    # Skip if db is 'admin'
+                    if ns_value['db'] == 'admin':
+                        skip_this_shape = True
+                    else:
+                        namespace = f"{ns_value['db']}.{ns_value['coll']}"
+                else:
+                    namespace = str(ns_value) if ns_value is not None else ""
             
+            # Skip admin databases
+            if skip_this_shape:
+                continue
+                
             row = {
                 "shapeId": f"Shape {shape_id}",
                 "namespace": namespace,
@@ -54,7 +70,21 @@ def create_web_server(analyzed_results, shape_references):
             hash_details = []
             for hash_val in shape_info["hashes"]:
                 hash_data = shape_info["original_data"][hash_val]
-                namespace = hash_data.get("namespace", "")
+                # Format namespace as 'db.coll'
+                ns_value = hash_data.get("namespace", "")
+                skip_this_hash = False
+                if isinstance(ns_value, dict) and 'db' in ns_value and 'coll' in ns_value:
+                    # Skip if db is 'admin'
+                    if ns_value['db'] == 'admin':
+                        skip_this_hash = True
+                    else:
+                        namespace = f"{ns_value['db']}.{ns_value['coll']}"
+                else:
+                    namespace = str(ns_value) if ns_value is not None else ""
+                
+                # Skip admin databases
+                if skip_this_hash:
+                    continue
                 
                 # Process metrics for this hash
                 for metric in hash_data["metrics"]:
@@ -76,7 +106,19 @@ def create_web_server(analyzed_results, shape_references):
             
             # Get namespace for this shape (using the first hash)
             first_hash = shape_info["hashes"][0] if shape_info["hashes"] else ""
-            namespace = shape_info["original_data"][first_hash].get("namespace", "") if first_hash else ""
+            # Format namespace as 'db.coll'
+            namespace = ""
+            if first_hash:
+                ns_value = shape_info["original_data"][first_hash].get("namespace", "")
+                if isinstance(ns_value, dict) and 'db' in ns_value and 'coll' in ns_value:
+                    # Skip if db is 'admin'
+                    if ns_value['db'] == 'admin':
+                        # Just use an empty string if it's admin
+                        namespace = ""
+                    else:
+                        namespace = f"{ns_value['db']}.{ns_value['coll']}"
+                else:
+                    namespace = str(ns_value) if ns_value is not None else ""
             
             return jsonify({
                 "shapeId": f"Shape {shape_id}",
@@ -93,7 +135,21 @@ def create_web_server(analyzed_results, shape_references):
         for shape_id, shape_info in shape_references.items():
             if hash_val in shape_info["hashes"]:
                 query_data = shape_info["original_data"][hash_val]
-                namespace = query_data.get("namespace", "")
+                # Format namespace as 'db.coll'
+                ns_value = query_data.get("namespace", "")
+                skip_this_query = False
+                if isinstance(ns_value, dict) and 'db' in ns_value and 'coll' in ns_value:
+                    # Skip if db is 'admin'
+                    if ns_value['db'] == 'admin':
+                        skip_this_query = True
+                    else:
+                        namespace = f"{ns_value['db']}.{ns_value['coll']}"
+                else:
+                    namespace = str(ns_value) if ns_value is not None else ""
+                
+                # Skip admin databases
+                if skip_this_query:
+                    continue
                 
                 # Extract command and pipeline information
                 command_type = query_data.get("query_shape", {}).get("command", "Unknown")
